@@ -146,31 +146,29 @@ function createInputFormWebView()
 
 		</form>
 
-		<button id ="testJS">HelloParagraph</button>
-		<p id ="theInput">HelloParagraph</p>
+		<button id ="testJS">TheButton</button>
+		<p id ="theInput">TheInputValueToPassToMessage</p>
 
 
 	</div>
 
 	<script>
+	//This is to see how messages will be passed from panel to the extension
 		(function() {
             const vscode = acquireVsCodeApi();
+
             const counter = document.getElementById('testJS');
-
 			var value = document.getElementById("theInput").innerHTML;
-			var projectNameValue = document.getElementById("projectName").value;
-
 
             let count = 0;
             setInterval(() => {
                 counter.textContent = count++;
-                // Alert the extension when our cat introduces a bug
+                // Alert the extension after some interval
                 if (Math.random() < 0.001 * count) {
                     vscode.postMessage({
                         command: 'alert',
-                        text: '🐛  on line ' + count,
+                        text: 'Counter has reached value' + count,
 						value: value,
-						projectNameValue: projectNameValue
                     })
                 }
             }, 100);
@@ -188,14 +186,13 @@ function createInputFormWebView()
 		makeAPIPostCall(message);
 		switch (message.command) {
 		case 'alert':
-			  vscode.window.showErrorMessage(message.text);
+			  vscode.window.showInformationMessage(message.text);
 			  console.log(message.value);
 			return;
 			}
 		}
 	);
 }
-
 
 // This method is used to make post call to the API
 function makeAPIPostCall(message)
@@ -216,7 +213,7 @@ function makeAPIPostCall(message)
 
 	// the post options
 	var optionspost = {
-    	host : 'extensiontesting20230215113923.net',
+    	host : 'extensiontesting20230215113923.azurewebsites.net',
     	port : 443,
     	path : '/',
     	method : 'POST',
@@ -246,7 +243,6 @@ function makeAPIPostCall(message)
 	reqPost.on('error', function(e) {
 	    console.error(e);
 	});
-
 }
 
 // This method is called when your extension is deactivated
