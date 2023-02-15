@@ -186,7 +186,7 @@ function createInputFormWebView()
 		makeAPIPostCall(message);
 		switch (message.command) {
 		case 'alert':
-			  vscode.window.showInformationMessage(message.text);
+			  vscode.window.showWarningMessage(message.text);
 			  console.log(message.value);
 			return;
 			}
