@@ -1,4 +1,3 @@
-// @ts-nocheck
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 const vscode = require('vscode');
@@ -6,9 +5,9 @@ const fs = require('fs');
 const path = require('path');
 const { parentPort } = require('worker_threads');
 
+
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
-
 /**
  * @param {vscode.ExtensionContext} context
  */
@@ -20,13 +19,15 @@ function activate(context) {
 
 		vscode.window.showInformationMessage('Unit Test Generator is now active!');
 		createInputFormWebView();
-		console.log('Congratulations, you reached line 23 of code!');		
 	});
 
 	context.subscriptions.push(disposable);
 }
 
 
+//functions added by us
+
+// This method is used to render the input form to the user
 function createInputFormWebView()
 {
 	const panel = vscode.window.createWebviewPanel(
@@ -36,7 +37,7 @@ function createInputFormWebView()
 		{
 			enableForms:true,
 			enableScripts:true
-		} // Webview options. More on these later.
+		} //WebView Options
 	);
 
 	const htmlFormContent = `<!DOCTYPE html>
@@ -44,7 +45,6 @@ function createInputFormWebView()
 	<head>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<meta http-equiv="Content-Security-Policy"  content="frame-src http://localhost:35637/" />
 		<title>User Input</title>
 
 		<style>
@@ -121,7 +121,7 @@ function createInputFormWebView()
 		
 		<form enctype="multipart/form-data" action="http://localhost:35637" method="post" id="getUserInput">
 
-			<label for="testFramework">Test Framework:</label><br>
+			<label for="testFramework">Test Framework</label><br>
 			<input type="radio" id="testFramework" name="test_framework" value="MSTest">
 			<label for="testFramework">MSTest</label><br>
 			<input type="radio" id="testFramework" name="test_framework" value="XUnit">
@@ -146,27 +146,108 @@ function createInputFormWebView()
 
 		</form>
 
-		<p id ="testJS">HelloParagraph</p>
+		<button id ="testJS">HelloParagraph</button>
+		<p id ="theInput">HelloParagraph</p>
+
 
 	</div>
 
 	<script>
-		const pGrab = document.getElementById('testJS');
-		pGrab.innerHTML = getString();
+		(function() {
+            const vscode = acquireVsCodeApi();
+            const counter = document.getElementById('testJS');
 
-		function getString()
-		{
-			return "";
-		}
+			var value = document.getElementById("theInput").innerHTML;
+			var projectNameValue = document.getElementById("projectName").value;
+
+
+            let count = 0;
+            setInterval(() => {
+                counter.textContent = count++;
+                // Alert the extension when our cat introduces a bug
+                if (Math.random() < 0.001 * count) {
+                    vscode.postMessage({
+                        command: 'alert',
+                        text: '🐛  on line ' + count,
+						value: value,
+						projectNameValue: projectNameValue
+                    })
+                }
+            }, 100);
+        }())
 	</script>
 
 	</body>
 	</html>`;
 
 	panel.webview.html = htmlFormContent;
+
+	// Handle messages from the webview
+	panel.webview.onDidReceiveMessage(
+		message => {
+		makeAPIPostCall(message);
+		switch (message.command) {
+		case 'alert':
+			  vscode.window.showErrorMessage(message.text);
+			  console.log(message.value);
+			return;
+			}
+		}
+	);
 }
 
 
+// This method is used to make post call to the API
+function makeAPIPostCall(message)
+{
+	var https = require('https');
+
+	// create the JSON object
+	var jsonObject = JSON.stringify({
+    	"message" : message.command,
+    	"name" : message.text
+	});
+
+	// prepare the header
+	var postheaders = {
+    	'Content-Type' : 'application/json',
+    	'Content-Length' : Buffer.byteLength(jsonObject, 'utf8')
+	};
+
+	// the post options
+	var optionspost = {
+    	host : 'extensiontesting20230215113923.net',
+    	port : 443,
+    	path : '/',
+    	method : 'POST',
+    	headers : postheaders
+	};
+
+	console.info('Options prepared:');
+	console.info(optionspost);
+	console.info('Do the POST call');
+
+	// do the POST call
+	var reqPost = https.request(optionspost, function(res) {
+	    console.log("statusCode: ", res.statusCode);
+    	// uncomment it for header details
+		//  console.log("headers: ", res.headers);
+		
+		res.on('data', function(d) {
+    		console.info('POST result:\n');
+        	console.info('\n\nPOST completed');
+    	});
+	});
+
+	// write the json data
+	reqPost.write(jsonObject);
+	reqPost.end();
+	
+	reqPost.on('error', function(e) {
+	    console.error(e);
+	});
+
+}
 
 // This method is called when your extension is deactivated
 function deactivate() {}
